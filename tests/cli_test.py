@@ -57,6 +57,7 @@ def test_help_message(flag, current_version):
         b'   -r, --rewrite s:r    Rewrite received signal s to new signal r before proxying.\n'
         b'                        To ignore (not proxy) a signal, rewrite it to 0.\n'
         b'                        This option can be specified multiple times.\n'
+        b'   -t, --terminate-any  Terminate when any child exits.\n'
         b'   -v, --verbose        Print debugging information to stderr.\n'
         b'   -h, --help           Print this help message and exit.\n'
         b'   -V, --version        Print the current version and exit.\n'

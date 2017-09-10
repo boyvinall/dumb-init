@@ -42,6 +42,7 @@ int signal_rewrite[MAXSIG + 1] = {[0 ... MAXSIG] = -1};
 pid_t child_pid = -1;
 char debug = 0;
 char use_setsid = 1;
+char terminate_any_child = 0;
 
 int translate_signal(int signum) {
     if (signum <= 0 || signum > MAXSIG) {
@@ -102,7 +103,7 @@ void handle_signal(int signum) {
                 DEBUG("A child with PID %d was terminated by signal %d.\n", killed_pid, exit_status - 128);
             }
 
-            if (killed_pid == child_pid) {
+            if (killed_pid == child_pid || terminate_any_child) {
                 forward_signal(SIGTERM);  // send SIGTERM to any remaining children
                 DEBUG("Child exited with status %d. Goodbye.\n", exit_status);
                 exit(exit_status);
@@ -132,6 +133,7 @@ void print_help(char *argv[]) {
         "   -r, --rewrite s:r    Rewrite received signal s to new signal r before proxying.\n"
         "                        To ignore (not proxy) a signal, rewrite it to 0.\n"
         "                        This option can be specified multiple times.\n"
+        "   -t, --terminate-any  Terminate when any child exits.\n"
         "   -v, --verbose        Print debugging information to stderr.\n"
         "   -h, --help           Print this help message and exit.\n"
         "   -V, --version        Print the current version and exit.\n"
@@ -175,20 +177,24 @@ void set_rewrite_to_sigstop_if_not_defined(int signum) {
 char **parse_command(int argc, char *argv[]) {
     int opt;
     struct option long_options[] = {
-        {"help",         no_argument,       NULL, 'h'},
-        {"single-child", no_argument,       NULL, 'c'},
-        {"rewrite",      required_argument, NULL, 'r'},
-        {"verbose",      no_argument,       NULL, 'v'},
-        {"version",      no_argument,       NULL, 'V'},
-        {NULL,                     0,       NULL,   0},
+        {"help",                no_argument,       NULL, 'h'},
+        {"single-child",        no_argument,       NULL, 'c'},
+        {"rewrite",             required_argument, NULL, 'r'},
+        {"verbose",             no_argument,       NULL, 'v'},
+        {"version",             no_argument,       NULL, 'V'},
+        {"terminate_any_child", no_argument,       NULL, 't'},
+        {NULL,                  0,                 NULL,   0},
     };
-    while ((opt = getopt_long(argc, argv, "+hvVcr:", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "+hvVcr:t", long_options, NULL)) != -1) {
         switch (opt) {
             case 'h':
                 print_help(argv);
                 exit(0);
             case 'v':
                 debug = 1;
+                break;
+            case 't':
+                terminate_any_child = 1;
                 break;
             case 'V':
                 fprintf(stderr, "dumb-init v%s", VERSION);
